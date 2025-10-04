@@ -1,12 +1,13 @@
 import dotenv from "dotenv";
 import path from "path";
 
-// Explicit absolute path to Backend/.env
-const envPath = path.resolve('C:/Users/rayya/Downloads/NASAWINATHON/Backend/.env');
-dotenv.config({ path: envPath });
+dotenv.config({ path: path.resolve("./.env") });
+console.log("Loaded NASA_API_KEY:", process.env.NASA_API_KEY);
 
-console.log("Reading .env from:", envPath);
-console.log("NASA_API_KEY =", process.env.NASA_API_KEY);
+if (!process.env.NASA_API_KEY) {
+  console.error("❌ NASA_API_KEY is not set in .env!");
+  process.exit(1);
+}
 
 import express from "express";
 import neos from "./routes/neos.js";
