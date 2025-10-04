@@ -245,6 +245,8 @@ export default function Simulation() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
   const [speed, setSpeed] = useState(1);
+  const startTimeRef = useRef(new Date());
+  const lastUpdateRef = useRef(Date.now());
 
   useEffect(() => {
     fetch('/asteroid.json')
@@ -255,18 +257,37 @@ export default function Simulation() {
 
   useEffect(() => {
     if (!isPlaying) return;
+
     const interval = setInterval(() => {
-      setCurrentDate(new Date());
-    }, 1000);
+      const now = Date.now();
+      const deltaMs = now - lastUpdateRef.current;
+      lastUpdateRef.current = now;
+
+      // Advance the simulated time by delta * speed
+      setCurrentDate(prevDate => {
+        const newDate = new Date(prevDate);
+        newDate.setTime(newDate.getTime() + (deltaMs * speed));
+        return newDate;
+      });
+    }, 1000 / 30); // Update 30 times per second for smoother updates
+
     return () => clearInterval(interval);
-  }, [isPlaying]);
+  }, [isPlaying, speed]);
 
   const handlePlayPause = () => {
+    if (!isPlaying) {
+      // When resuming, update the last update time to avoid time jump
+      lastUpdateRef.current = Date.now();
+    }
     setIsPlaying(!isPlaying);
   };
 
   const handleReset = () => {
-    window.location.reload();
+    setCurrentDate(new Date());
+    startTimeRef.current = new Date();
+    lastUpdateRef.current = Date.now();
+    setIsPlaying(true);
+    setSpeed(1);
   };
 
   const handleSpeedChange = (value) => {
@@ -296,7 +317,7 @@ export default function Simulation() {
             Reset
           </Button>
           <div className="ml-auto text-sm text-muted-foreground">
-            {currentDate.toLocaleString()}
+            {currentDate.toString()}
           </div>
         </div>
 
