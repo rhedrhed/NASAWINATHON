@@ -4,6 +4,7 @@ import { ThemeProvider } from "./components/theme-provider"
 import Navbar from "./components/Navbar"
 import Home from "./pages/Home"
 import Simulation from "./pages/Simulation"
+import OrbitVisualization from "./pages/OrbitVisualization"
 
 export default function App() {
     return (
@@ -13,6 +14,7 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<Home />} />
                     <Route path="/simulation" element={<Simulation />} />
+                    <Route path="/orbit-view" element={<OrbitVisualization />} />
                 </Routes>
             </Router>
         </ThemeProvider>

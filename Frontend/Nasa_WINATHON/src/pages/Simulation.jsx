@@ -1,4 +1,5 @@
 import { useEffect, useState, useRef, Suspense } from "react";
+import { useNavigate } from "react-router-dom";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Text } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
@@ -289,6 +290,7 @@ const SECS_PER_MONTH = SECS_PER_DAY * 30.4167;
 const SECS_PER_YEAR = SECS_PER_DAY * 365.25;
 
 export default function Simulation() {
+  const navigate = useNavigate();
   const [asteroidData, setAsteroidData] = useState(null);
   const [asteroidOrbitData, setAsteroidOrbitData] = useState([]);
   const [earthOrbitData, setEarthOrbitData] = useState([]);
@@ -387,6 +389,21 @@ export default function Simulation() {
 
   const handleSpeedChange = (value) => {
     setSpeed(parseFloat(value));
+  };
+
+  const handleJumpToDate = (targetDate) => {
+    // Check if the target date is within the data range
+    if (dataStartTime && dataEndTime) {
+      const targetTime = new Date(targetDate).getTime();
+      
+      if (targetTime < dataStartTime.getTime() || targetTime > dataEndTime.getTime()) {
+        console.warn('Target date is outside the available data range');
+        return;
+      }
+      
+      // Navigate to the standalone visualization page with the date as a URL parameter
+      navigate(`/orbit-view?date=${targetDate.toISOString()}`);
+    }
   };
 
   return (
@@ -648,12 +665,22 @@ export default function Simulation() {
                 .slice(0, 5)
                 .map((approach, idx) => {
                   const approachDate = new Date(approach.close_approach_date_full);
+                  const isInDataRange = dataStartTime && dataEndTime && 
+                    approachDate >= dataStartTime && approachDate <= dataEndTime;
 
                   return (
-                    <div key={idx} className="p-3 rounded bg-muted">
+                    <div 
+                      key={idx} 
+                      className={`p-3 rounded ${isInDataRange ? 'bg-muted hover:bg-muted/80 cursor-pointer transition-colors' : 'bg-muted/50'}`}
+                      onClick={() => isInDataRange && handleJumpToDate(approachDate)}
+                      title={isInDataRange ? 'Click to jump to this date' : 'Date outside available data range'}
+                    >
                       <div className="flex justify-between items-start">
                         <div>
-                          <p className="font-semibold">{approach.close_approach_date_full}</p>
+                          <p className="font-semibold">
+                            {approach.close_approach_date_full}
+                            {isInDataRange && <span className="ml-2 text-xs text-primary">📍 View in simulation</span>}
+                          </p>
                           <p className="text-sm">Miss Distance: {parseFloat(approach.miss_distance.kilometers).toLocaleString()} km</p>
                           <p className="text-sm">Relative Velocity: {parseFloat(approach.relative_velocity.kilometers_per_hour).toLocaleString()} km/h</p>
                         </div>
