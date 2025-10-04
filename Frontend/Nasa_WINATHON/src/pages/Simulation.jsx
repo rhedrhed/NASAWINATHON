@@ -3,7 +3,8 @@ import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Text } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Play, Pause, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { Play, Pause, RotateCcw, ZoomIn, ZoomOut, Info } from "lucide-react";
 import * as THREE from "three";
 
 function Sun({ isPlaying }) {
@@ -301,7 +302,7 @@ export default function Simulation() {
 
         <div className="flex items-center gap-4">
           <label className="text-sm font-medium">
-              Time Step <span className="text-sm text-muted-foreground">(per second)</span>:
+              Time step <span className="text-sm text-muted-foreground">(per second)</span>:
           </label>
           <Select value={speed.toString()} onValueChange={handleSpeedChange}>
             <SelectTrigger className="w-[180px]">
@@ -337,60 +338,162 @@ export default function Simulation() {
       {asteroidData && (
         <div className="mt-6 p-4 border rounded-lg">
           <h2 className="text-2xl font-semibold mb-4">Asteroid Information</h2>
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-            <div>
-              <p className="text-sm text-muted-foreground">Name</p>
-              <p className="font-semibold">{asteroidData.name}</p>
+          <TooltipProvider>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div>
+                <p className="text-sm text-muted-foreground">Name</p>
+                <p className="font-semibold">{asteroidData.name}</p>
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Designation</p>
+                <p className="font-semibold">{asteroidData.designation}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Estimated Diameter</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">The estimated size range of the asteroid based on its brightness and assumed reflectivity.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">
+                  {asteroidData.estimated_diameter.meters.estimated_diameter_min.toFixed(1)} - {asteroidData.estimated_diameter.meters.estimated_diameter_max.toFixed(1)} m
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Absolute Magnitude</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">A measure of the asteroid's intrinsic brightness. Lower values indicate brighter (and typically larger) objects.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{asteroidData.absolute_magnitude_h}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Potentially Hazardous</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">An asteroid is classified as potentially hazardous if it's larger than ~140m and comes within 0.05 AU of Earth's orbit.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">
+                  {asteroidData.is_potentially_hazardous_asteroid ? 'Yes' : 'No'}
+                </p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Orbit Class</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">{asteroidData.orbital_data.orbit_class.orbit_class_description}</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{asteroidData.orbital_data.orbit_class.orbit_class_type}</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Semi-major Axis</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">Half of the longest diameter of the elliptical orbit. Measured in Astronomical Units (AU), where 1 AU = distance from Earth to Sun (~150 million km).</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{asteroidData.orbital_data.semi_major_axis} AU</p>
+              </div>
+              <div className="text-center">
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Eccentricity</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">How elliptical the orbit is. 0 = perfect circle, values closer to 1 = more elongated orbit.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{parseFloat(asteroidData.orbital_data.eccentricity).toFixed(4)}</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Inclination</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">The tilt of the asteroid's orbital plane relative to Earth's orbital plane. 0° = same plane as Earth.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{parseFloat(asteroidData.orbital_data.inclination).toFixed(2)}°</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Orbital Period</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">The time it takes for the asteroid to complete one full orbit around the Sun.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{parseFloat(asteroidData.orbital_data.orbital_period).toFixed(1)} days</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Perihelion Distance</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">The closest distance the asteroid gets to the Sun during its orbit.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{asteroidData.orbital_data.perihelion_distance} AU</p>
+              </div>
+              <div>
+                <div className="flex items-center justify-center gap-1">
+                  <p className="text-sm text-muted-foreground">Aphelion Distance</p>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p className="max-w-2xs">The farthest distance the asteroid gets from the Sun during its orbit.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </div>
+                <p className="font-semibold">{asteroidData.orbital_data.aphelion_distance} AU</p>
+              </div>
             </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Designation</p>
-              <p className="font-semibold">{asteroidData.designation}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Estimated Diameter</p>
-              <p className="font-semibold">
-                {asteroidData.estimated_diameter.meters.estimated_diameter_min.toFixed(1)} - {asteroidData.estimated_diameter.meters.estimated_diameter_max.toFixed(1)} m
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Absolute Magnitude</p>
-              <p className="font-semibold">{asteroidData.absolute_magnitude_h}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Potentially Hazardous</p>
-              <p className="font-semibold">
-                {asteroidData.is_potentially_hazardous_asteroid ? '⚠ Yes' : '✓ No'}
-              </p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Orbit Class</p>
-              <p className="font-semibold">{asteroidData.orbital_data.orbit_class.orbit_class_type}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Semi-major Axis</p>
-              <p className="font-semibold">{asteroidData.orbital_data.semi_major_axis} AU</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Eccentricity</p>
-              <p className="font-semibold">{parseFloat(asteroidData.orbital_data.eccentricity).toFixed(4)}</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Inclination</p>
-              <p className="font-semibold">{parseFloat(asteroidData.orbital_data.inclination).toFixed(2)}°</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Orbital Period</p>
-              <p className="font-semibold">{parseFloat(asteroidData.orbital_data.orbital_period).toFixed(1)} days</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Perihelion Distance</p>
-              <p className="font-semibold">{asteroidData.orbital_data.perihelion_distance} AU</p>
-            </div>
-            <div>
-              <p className="text-sm text-muted-foreground">Aphelion Distance</p>
-              <p className="font-semibold">{asteroidData.orbital_data.aphelion_distance} AU</p>
-            </div>
-          </div>
+          </TooltipProvider>
 
           <div className="mt-6">
             <h3 className="text-xl font-semibold mb-3">Upcoming Close Approaches</h3>
