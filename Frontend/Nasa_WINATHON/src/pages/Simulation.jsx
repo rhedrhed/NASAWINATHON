@@ -142,19 +142,29 @@ function Asteroid({ asteroidData, isPlaying, speed }) {
     const omega = parseFloat(orbitalData.perihelion_argument) * Math.PI / 180;
     const Omega = parseFloat(orbitalData.ascending_node_longitude) * Math.PI / 180;
 
-    for (let angle = 0; angle <= 2 * Math.PI; angle += 0.02) {
-      const r = a * (1 - e * e) / (1 + e * Math.cos(angle));
-      const xOrbit = r * Math.cos(angle);
-      const yOrbit = r * Math.sin(angle);
+    for (let nu = 0; nu <= 2 * Math.PI; nu += 0.02) {
+      // Calculate distance from Sun for this true anomaly
+      const r = a * (1 - e * e) / (1 + e * Math.cos(nu));
+      
+      // Position in orbital plane
+      const xOrbit = r * Math.cos(nu);
+      const yOrbit = r * Math.sin(nu);
 
-      const x = (Math.cos(omega) * Math.cos(Omega) - Math.sin(omega) * Math.sin(Omega) * Math.cos(i)) * xOrbit +
-                (-Math.sin(omega) * Math.cos(Omega) - Math.cos(omega) * Math.sin(Omega) * Math.cos(i)) * yOrbit;
+      // Apply 3D rotations to get position in space (same as asteroid position)
+      // Rotation around z-axis by Omega (ascending node)
+      const x1 = Math.cos(Omega) * xOrbit - Math.sin(Omega) * yOrbit;
+      const y1 = Math.sin(Omega) * xOrbit + Math.cos(Omega) * yOrbit;
+      const z1 = 0;
 
-      const y = (Math.cos(omega) * Math.sin(Omega) + Math.sin(omega) * Math.cos(Omega) * Math.cos(i)) * xOrbit +
-                (-Math.sin(omega) * Math.sin(Omega) + Math.cos(omega) * Math.cos(Omega) * Math.cos(i)) * yOrbit;
+      // Rotation around x-axis by inclination
+      const x2 = x1;
+      const y2 = Math.cos(i) * y1 - Math.sin(i) * z1;
+      const z2 = Math.sin(i) * y1 + Math.cos(i) * z1;
 
-      const z = (Math.sin(omega) * Math.sin(i)) * xOrbit +
-                (Math.cos(omega) * Math.sin(i)) * yOrbit;
+      // Rotation around z-axis by omega (argument of perihelion)
+      const x = Math.cos(omega) * x2 - Math.sin(omega) * y2;
+      const y = Math.sin(omega) * x2 + Math.cos(omega) * y2;
+      const z = z2;
 
       orbitPoints.push(new THREE.Vector3(x, z, y));
     }
