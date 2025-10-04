@@ -10,7 +10,7 @@ router.get("/feed", async (req, res) => {
     const data = await neowsFeed(start_date, end_date);
     res.json(data);
   } catch (err) {
-    console.error(err); // optional: log the error
+    console.error(err); 
     res.status(500).json({ error: "Failed to fetch NEOWS feed" });
   }
 });
