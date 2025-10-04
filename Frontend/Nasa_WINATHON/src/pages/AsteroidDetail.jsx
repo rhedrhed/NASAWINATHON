@@ -13,6 +13,7 @@ const SECS_PER_DAY = SECS_PER_HOUR * 24;
 const SECS_PER_WEEK = SECS_PER_DAY * 7;
 const SECS_PER_MONTH = SECS_PER_DAY * 30.4167;
 const SECS_PER_YEAR = SECS_PER_DAY * 365.25;
+const SPEED_STORAGE_KEY = 'asteroid-simulation-speed';
 
 export default function AsteroidDetail() {
   const navigate = useNavigate();
@@ -22,7 +23,13 @@ export default function AsteroidDetail() {
   const [earthOrbitData, setEarthOrbitData] = useState([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  const [speed, setSpeed] = useState(1);
+  
+  // Initialize speed from localStorage or default to 1 week per second
+  const [speed, setSpeed] = useState(() => {
+    const savedSpeed = localStorage.getItem(SPEED_STORAGE_KEY);
+    return savedSpeed ? parseFloat(savedSpeed) : SECS_PER_WEEK;
+  });
+  
   const [dataStartTime, setDataStartTime] = useState(null);
   const [dataEndTime, setDataEndTime] = useState(null);
   const startTimeRef = useRef(new Date());
@@ -110,11 +117,12 @@ export default function AsteroidDetail() {
     startTimeRef.current = resetTime;
     lastUpdateRef.current = Date.now();
     setIsPlaying(true);
-    setSpeed(1);
   };
 
   const handleSpeedChange = (value) => {
-    setSpeed(parseFloat(value));
+    const newSpeed = parseFloat(value);
+    setSpeed(newSpeed);
+    localStorage.setItem(SPEED_STORAGE_KEY, newSpeed.toString());
   };
 
   const handleJumpToDate = (targetDate) => {
