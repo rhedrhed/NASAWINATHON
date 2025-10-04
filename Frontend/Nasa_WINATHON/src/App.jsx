@@ -1,15 +1,28 @@
 import './App.css'
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
 import { ThemeProvider } from "./components/theme-provider"
-import { Button } from "@/components/ui/button"
-import lebron from './assets/lebron.png'
+import Navbar from "./components/Navbar"
+import Home from "./pages/Home"
+import NearEarthObjects from "./pages/NearEarthObjects"
+import SmallBodyDatabase from "./pages/SmallBodyDatabase"
+import Earthquakes from "./pages/Earthquakes"
+import Elevation from "./pages/Elevation"
+import Simulation from "./pages/Simulation"
 
 export default function App() {
     return (
         <ThemeProvider defaultTheme="dark" storageKey="vite-ui-theme">
-            <Button variant="outline">Button</Button>
-            <img src={lebron} alt="Lebron holding a meteor on one hand, and a
-            basketball on the other hand, with one leg on top of a basketball">
-            </img>
+            <Router>
+                <Navbar />
+                <Routes>
+                    <Route path="/" element={<Home />} />
+                    <Route path="/neo" element={<NearEarthObjects />} />
+                    <Route path="/sbdb" element={<SmallBodyDatabase />} />
+                    <Route path="/earthquakes" element={<Earthquakes />} />
+                    <Route path="/elevation" element={<Elevation />} />
+                    <Route path="/simulation" element={<Simulation />} />
+                </Routes>
+            </Router>
         </ThemeProvider>
     )
 }
