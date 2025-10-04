@@ -1,6 +1,23 @@
+import fs from "fs";
+console.log(".env exists?", fs.existsSync(path.resolve(process.cwd(), '.env')));
+console.log("Raw .env content:\n", fs.readFileSync(path.resolve(process.cwd(), '.env'), 'utf-8'));
+
 
 import dotenv from "dotenv";
-dotenv.config();
+import path from "path";
+
+// Use absolute path to Backend/.env
+dotenv.config({ path: path.resolve(process.cwd(), '.env') });
+
+console.log(".env loaded? NASA_API_KEY =", process.env.NASA_API_KEY);
+
+if (!process.env.NASA_API_KEY) {
+  console.error("❌ NASA_API_KEY is not set in .env! Please add it and restart the server.");
+  process.exit(1);
+}
+
+
+
 
 import express from "express";
 
@@ -46,3 +63,6 @@ const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`🚀 Server running at http://localhost:${PORT}`);
 });
+
+
+
