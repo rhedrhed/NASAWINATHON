@@ -1,5 +1,5 @@
 import { useEffect, useState, useRef, Suspense } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Play, Pause, RotateCcw } from "lucide-react";
@@ -9,6 +9,7 @@ import { parseHorizonsData, jdToDate } from "@/lib/horizonsUtils";
 export default function OrbitVisualization() {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const { asteroidId } = useParams();
   const [asteroidOrbitData, setAsteroidOrbitData] = useState([]);
   const [earthOrbitData, setEarthOrbitData] = useState([]);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -33,7 +34,7 @@ export default function OrbitVisualization() {
           setEarthOrbitData(parsed);
           setDataStartTime(startTime);
           setDataEndTime(endTime);
-          
+
           // Set initial date from URL param or default to start
           if (targetDateParam) {
             const targetDate = new Date(targetDateParam);
@@ -72,13 +73,13 @@ export default function OrbitVisualization() {
       setCurrentDate(prevDate => {
         const newDate = new Date(prevDate);
         const newTime = newDate.getTime() + deltaMs;
-        
+
         // Check if we've reached the end of the data
         if (newTime >= dataEndTime.getTime()) {
           setIsPlaying(false);
           return new Date(dataEndTime);
         }
-        
+
         newDate.setTime(newTime);
         return newDate;
       });
@@ -90,7 +91,7 @@ export default function OrbitVisualization() {
   const handlePlayPause = () => {
     if (!isPlaying) {
       lastUpdateRef.current = Date.now();
-      
+
       // If we're at the end, restart from beginning
       if (dataEndTime && currentDate.getTime() >= dataEndTime.getTime()) {
         setCurrentDate(dataStartTime || new Date());
@@ -107,7 +108,7 @@ export default function OrbitVisualization() {
   };
 
   const handleBack = () => {
-    navigate('/simulation');
+    navigate(`/simulation/${asteroidId}`);
   };
 
   return (
@@ -118,7 +119,7 @@ export default function OrbitVisualization() {
             <ArrowLeft className="mr-2 h-4 w-4" />
             Back to Simulation
           </Button>
-          
+
           <div className="flex gap-2">
             <Button onClick={handlePlayPause} variant="outline" size="sm">
               {isPlaying ? (
@@ -151,11 +152,11 @@ export default function OrbitVisualization() {
 
         {dataStartTime && dataEndTime && (
           <div className="mb-4 w-full bg-muted rounded-full h-2 overflow-hidden">
-            <div 
+            <div
               className="bg-primary h-full"
               style={{
-                width: `${Math.min(100, Math.max(0, 
-                  ((currentDate.getTime() - dataStartTime.getTime()) / 
+                width: `${Math.min(100, Math.max(0,
+                  ((currentDate.getTime() - dataStartTime.getTime()) /
                   (dataEndTime.getTime() - dataStartTime.getTime())) * 100
                 ))}%`
               }}
@@ -166,7 +167,7 @@ export default function OrbitVisualization() {
         <div className="border rounded-lg overflow-hidden bg-black" style={{ height: 'calc(100vh - 200px)' }}>
           <Canvas camera={{ position: [8, 8, 8], fov: 50 }}>
             <Suspense fallback={null}>
-              <OrbitScene 
+              <OrbitScene
                 asteroidOrbitData={asteroidOrbitData}
                 earthOrbitData={earthOrbitData}
                 isPlaying={isPlaying}
