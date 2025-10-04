@@ -23,7 +23,9 @@
           packages = [
             pkgs.nodejs_22
             pkgs.typescript
+            pkgs.tailwindcss
             pkgs.typescript-language-server
+            pkgs.tailwindcss-language-server
           ];
         };
       }
