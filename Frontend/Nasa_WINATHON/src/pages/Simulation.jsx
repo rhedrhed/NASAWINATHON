@@ -145,7 +145,7 @@ function Asteroid({ asteroidData, isPlaying, speed }) {
     for (let nu = 0; nu <= 2 * Math.PI; nu += 0.02) {
       // Calculate distance from Sun for this true anomaly
       const r = a * (1 - e * e) / (1 + e * Math.cos(nu));
-      
+
       // Position in orbital plane
       const xOrbit = r * Math.cos(nu);
       const yOrbit = r * Math.sin(nu);
@@ -272,11 +272,7 @@ export default function Simulation() {
 
   return (
     <div className="container mx-auto px-4 py-8">
-      <h1 className="text-4xl font-bold mb-4">3D Real-Time Orbital Simulation</h1>
-      <p className="text-lg text-muted-foreground mb-6">
-        Live 3D visualization of asteroid {asteroidData?.name || '...'} orbit around the Sun
-      </p>
-
+      <h1 className="text-4xl font-bold mb-4">Asteroid {asteroidData?.name || '...'}</h1>
       <div className="mb-4 space-y-3">
         <div className="flex gap-2 items-center">
           <Button onClick={handlePlayPause} variant="outline" size="sm">
@@ -297,7 +293,7 @@ export default function Simulation() {
             Reset
           </Button>
           <div className="ml-auto text-sm text-muted-foreground">
-            Real-time: {currentDate.toLocaleString()} | Speed: {speed}x
+            {currentDate.toLocaleString()} | Speed: {speed}x
           </div>
         </div>
 
@@ -309,42 +305,28 @@ export default function Simulation() {
               variant={speed === 1 ? "default" : "outline"}
               size="sm"
             >
-              x1
-            </Button>
-            <Button
-              onClick={() => setPresetSpeed(1e2)}
-              variant={speed === 1e2 ? "default" : "outline"}
-              size="sm"
-            >
-              x1e2
+              1x
             </Button>
             <Button
               onClick={() => setPresetSpeed(1e3)}
               variant={speed === 1e3 ? "default" : "outline"}
               size="sm"
             >
-              x1e3
-            </Button>
-            <Button
-              onClick={() => setPresetSpeed(1e4)}
-              variant={speed === 1e4 ? "default" : "outline"}
-              size="sm"
-            >
-              x1e4
+              1000x
             </Button>
             <Button
               onClick={() => setPresetSpeed(1e5)}
               variant={speed === 1e5 ? "default" : "outline"}
               size="sm"
             >
-              x1e5
+              10000x
             </Button>
             <Button
               onClick={() => setPresetSpeed(1e6)}
               variant={speed === 1e6 ? "default" : "outline"}
               size="sm"
             >
-              x1e6
+              1000000x
             </Button>
           </div>
           <Slider
