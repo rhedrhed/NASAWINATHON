@@ -2,7 +2,7 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { Canvas, useFrame } from "@react-three/fiber";
 import { OrbitControls, Stars, Text } from "@react-three/drei";
 import { Button } from "@/components/ui/button";
-import { Slider } from "@/components/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Play, Pause, RotateCcw, ZoomIn, ZoomOut } from "lucide-react";
 import * as THREE from "three";
 
@@ -233,6 +233,12 @@ function Scene({ asteroidData, isPlaying, speed }) {
   );
 }
 
+const SECS_PER_HOUR = 3600;
+const SECS_PER_DAY = SECS_PER_HOUR * 24;
+const SECS_PER_WEEK = SECS_PER_DAY * 7;
+const SECS_PER_MONTH = SECS_PER_DAY * 30.4167;
+const SECS_PER_YEAR = SECS_PER_DAY * 365.25;
+
 export default function Simulation() {
   const [asteroidData, setAsteroidData] = useState(null);
   const [isPlaying, setIsPlaying] = useState(true);
@@ -263,11 +269,7 @@ export default function Simulation() {
   };
 
   const handleSpeedChange = (value) => {
-    setSpeed(value[0]);
-  };
-
-  const setPresetSpeed = (presetSpeed) => {
-    setSpeed(presetSpeed);
+    setSpeed(parseFloat(value));
   };
 
   return (
@@ -293,51 +295,29 @@ export default function Simulation() {
             Reset
           </Button>
           <div className="ml-auto text-sm text-muted-foreground">
-            {currentDate.toLocaleString()} | Speed: {speed}x
+            {currentDate.toLocaleString()}
           </div>
         </div>
 
         <div className="flex items-center gap-4">
-          <label className="text-sm font-medium">Speed Control:</label>
-          <div className="flex gap-2">
-            <Button
-              onClick={() => setPresetSpeed(1)}
-              variant={speed === 1 ? "default" : "outline"}
-              size="sm"
-            >
-              1x
-            </Button>
-            <Button
-              onClick={() => setPresetSpeed(1e3)}
-              variant={speed === 1e3 ? "default" : "outline"}
-              size="sm"
-            >
-              1000x
-            </Button>
-            <Button
-              onClick={() => setPresetSpeed(1e5)}
-              variant={speed === 1e5 ? "default" : "outline"}
-              size="sm"
-            >
-              10000x
-            </Button>
-            <Button
-              onClick={() => setPresetSpeed(1e6)}
-              variant={speed === 1e6 ? "default" : "outline"}
-              size="sm"
-            >
-              1000000x
-            </Button>
-          </div>
-          <Slider
-            value={[speed]}
-            onValueChange={handleSpeedChange}
-            min={1}
-            max={1000000}
-            step={1}
-            className="flex-1"
-          />
-          <span className="text-sm font-mono min-w-[60px]">{speed}x</span>
+          <label className="text-sm font-medium">
+              Time Step <span className="text-sm text-muted-foreground">(per second)</span>:
+          </label>
+          <Select value={speed.toString()} onValueChange={handleSpeedChange}>
+            <SelectTrigger className="w-[180px]">
+              <SelectValue placeholder="Select time step" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="1">1 second</SelectItem>
+              <SelectItem value={SECS_PER_HOUR.toString()}>1 hour</SelectItem>
+              <SelectItem value={SECS_PER_DAY.toString()}>1 day</SelectItem>
+              <SelectItem value={SECS_PER_WEEK.toString()}>1 week</SelectItem>
+              <SelectItem value={SECS_PER_MONTH.toString()}>1 month</SelectItem>
+              <SelectItem value={(SECS_PER_MONTH * 3).toString()}>3 months</SelectItem>
+              <SelectItem value={(SECS_PER_MONTH * 6).toString()}>6 months</SelectItem>
+              <SelectItem value={SECS_PER_YEAR.toString()}>1 year</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
 
