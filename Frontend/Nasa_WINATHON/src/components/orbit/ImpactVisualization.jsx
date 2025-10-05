@@ -8,9 +8,14 @@ export function ImpactVisualization({ impactData, isPlaying }) {
   const [progress, setProgress] = useState(0);
   const [showExplosion, setShowExplosion] = useState(false);
   const explosionRef = useRef();
+  const airburstRef = useRef();
 
   // Load Earth texture
   const earthTexture = useLoader(THREE.TextureLoader, 'https://raw.githubusercontent.com/mrdoob/three.js/dev/examples/textures/planets/earth_atmos_2048.jpg');
+
+  // Get impact type from data
+  const impactType = impactData?.impactType || "ground";
+  const burstAltitude = impactData?.burstAltitude ? parseFloat(impactData.burstAltitude) : null;
 
   // Calculate accurate sizes and speeds
   const earthRadiusKm = 6371; // Earth's actual radius in km
@@ -28,7 +33,11 @@ export function ImpactVisualization({ impactData, isPlaying }) {
   const startDistanceKm = 10000;
   const startDistanceUnits = startDistanceKm * kmToUnits;
 
-  // Calculate time to impact at given velocity
+  // Calculate burst altitude position (if airburst)
+  const burstAltitudeUnits = burstAltitude ? (burstAltitude / earthRadiusKm) : 0;
+  const burstDistance = earthRadiusUnits + burstAltitudeUnits;
+
+  // Calculate time to impact/burst at given velocity
   const timeToImpactSeconds = startDistanceKm / velocityKmPerSec;
   // Animation speed factor: how fast to run the animation (scale down for visibility)
   const timeScale = 3; // Make it 3x faster for better viewing (reduced from 5)
@@ -43,8 +52,13 @@ export function ImpactVisualization({ impactData, isPlaying }) {
     // Always position the asteroid, even when paused
     const t = progress;
     
-    // Simplified linear trajectory (straight line approach for clarity)
-    const currentDistance = startDistanceUnits - (startDistanceUnits - earthRadiusUnits) * t;
+    // For airburst, stop at burst altitude; for ground impact, continue to surface
+    let targetDistance = earthRadiusUnits;
+    if (impactType === "airburst" && burstDistance > earthRadiusUnits) {
+      targetDistance = burstDistance;
+    }
+    
+    const currentDistance = startDistanceUnits - (startDistanceUnits - targetDistance) * t;
     
     // Position on approach vector (from upper-left to center)
     const x = -currentDistance * 0.5;
@@ -77,6 +91,14 @@ export function ImpactVisualization({ impactData, isPlaying }) {
       const scale = Math.min(explosionTime * 3, 2);
       explosionRef.current.scale.set(scale, scale, scale);
       explosionRef.current.material.opacity = Math.max(0, 1 - explosionTime * 0.5);
+    }
+
+    // Animate airburst explosion (higher altitude)
+    if (showExplosion && airburstRef.current && impactType === "airburst") {
+      const explosionTime = (state.clock.getElapsedTime() % 3) / 3;
+      const scale = Math.min(explosionTime * 4, 3); // Larger for airburst
+      airburstRef.current.scale.set(scale, scale, scale);
+      airburstRef.current.material.opacity = Math.max(0, 1 - explosionTime * 0.4);
     }
   });
 
@@ -148,37 +170,86 @@ export function ImpactVisualization({ impactData, isPlaying }) {
         </>
       )}
 
-      {/* Impact explosion effect */}
+      {/* Impact explosion effects - different for airburst vs ground impact */}
       {showExplosion && (
         <>
-          {/* Main explosion sphere */}
-          <mesh ref={explosionRef} position={[0, 0, 0]}>
-            <sphereGeometry args={[earthRadiusUnits, 32, 32]} />
-            <meshBasicMaterial
-              color="#ff4400"
-              transparent
-              opacity={0.8}
-            />
-          </mesh>
+          {impactType === "airburst" ? (
+            // Airburst explosion - higher altitude, more spherical
+            <>
+              {/* Airburst explosion sphere at altitude */}
+              <mesh ref={airburstRef} position={[-burstDistance * 0.5, burstDistance * 0.3, -burstDistance * 0.3]}>
+                <sphereGeometry args={[burstAltitudeUnits * 3, 32, 32]} />
+                <meshBasicMaterial
+                  color="#ffaa00"
+                  transparent
+                  opacity={0.7}
+                />
+              </mesh>
 
-          {/* Shockwave ring */}
-          <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
-            <ringGeometry args={[earthRadiusUnits * 0.9, earthRadiusUnits * 1.5 + progress * 2, 32]} />
-            <meshBasicMaterial
-              color="#ff8800"
-              transparent
-              opacity={Math.max(0, 0.6 - progress * 0.3)}
-              side={THREE.DoubleSide}
-            />
-          </mesh>
+              {/* Atmospheric shockwave - expanding sphere */}
+              <mesh position={[-burstDistance * 0.5, burstDistance * 0.3, -burstDistance * 0.3]}>
+                <sphereGeometry args={[burstAltitudeUnits * 5, 32, 32]} />
+                <meshBasicMaterial
+                  color="#ff6600"
+                  transparent
+                  opacity={0.2}
+                  side={THREE.BackSide}
+                />
+              </mesh>
 
-          {/* Impact flash */}
-          <pointLight
-            position={[0, 0, 0]}
-            color="#ffaa00"
-            intensity={showExplosion ? 8 : 0}
-            distance={startDistanceUnits}
-          />
+              {/* Bright flash */}
+              <pointLight
+                position={[-burstDistance * 0.5, burstDistance * 0.3, -burstDistance * 0.3]}
+                color="#ffcc00"
+                intensity={showExplosion ? 12 : 0}
+                distance={startDistanceUnits * 2}
+              />
+            </>
+          ) : (
+            // Ground impact explosion
+            <>
+              {/* Main explosion sphere at surface */}
+              <mesh ref={explosionRef} position={[0, 0, 0]}>
+                <sphereGeometry args={[earthRadiusUnits, 32, 32]} />
+                <meshBasicMaterial
+                  color="#ff4400"
+                  transparent
+                  opacity={0.8}
+                />
+              </mesh>
+
+              {/* Surface shockwave ring */}
+              <mesh position={[0, 0, 0]} rotation={[Math.PI / 2, 0, 0]}>
+                <ringGeometry args={[earthRadiusUnits * 0.9, earthRadiusUnits * 1.5 + progress * 2, 32]} />
+                <meshBasicMaterial
+                  color="#ff8800"
+                  transparent
+                  opacity={Math.max(0, 0.6 - progress * 0.3)}
+                  side={THREE.DoubleSide}
+                />
+              </mesh>
+
+              {/* Debris/ejecta cone for large impacts */}
+              {parseFloat(impactData?.diameterAvg || 0) > 100 && (
+                <mesh position={[0, 0, 0]} rotation={[Math.PI / 4, 0, 0]}>
+                  <coneGeometry args={[earthRadiusUnits * 0.5, earthRadiusUnits * 1.5, 32]} />
+                  <meshBasicMaterial
+                    color="#882200"
+                    transparent
+                    opacity={0.4}
+                  />
+                </mesh>
+              )}
+
+              {/* Ground impact flash */}
+              <pointLight
+                position={[0, 0, 0]}
+                color="#ffaa00"
+                intensity={showExplosion ? 10 : 0}
+                distance={startDistanceUnits}
+              />
+            </>
+          )}
         </>
       )}
 

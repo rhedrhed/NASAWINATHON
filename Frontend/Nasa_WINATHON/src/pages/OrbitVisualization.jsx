@@ -21,7 +21,7 @@ export default function OrbitVisualization() {
   const [dataEndTime, setDataEndTime] = useState(null);
   const lastUpdateRef = useRef(Date.now());
   const [impactAnimationPlaying, setImpactAnimationPlaying] = useState(false);
-  
+
   // User-adjustable impact parameters
   const [customParameters, setCustomParameters] = useState({
     useCustom: false,
@@ -144,17 +144,17 @@ export default function OrbitVisualization() {
 
     if (targetApproach) {
       console.log('Looking for approach with date:', targetApproach);
-      
+
       // Convert ISO date to Date object for comparison
       const targetDateObj = new Date(targetApproach);
-      
+
       // Find closest matching approach by date
       approachData = asteroidData.close_approach_data?.find(approach => {
         const approachDateObj = new Date(approach.close_approach_date_full);
         // Match within same day (ignore exact time)
         return approachDateObj.toDateString() === targetDateObj.toDateString();
       });
-      
+
       if (!approachData) {
         console.log('No exact date match, trying fuzzy match by year-month-day');
         // Try partial match
@@ -165,7 +165,7 @@ export default function OrbitVisualization() {
         });
       }
     }
-    
+
     if (!approachData) {
       // Use the next close approach
       const now = new Date();
@@ -193,7 +193,7 @@ export default function OrbitVisualization() {
 
     // Get asteroid properties (use custom if enabled, otherwise from data)
     let diameterAvg, velocity, density;
-    
+
     if (customParameters.useCustom) {
       diameterAvg = customParameters.diameter || 50;
       velocity = customParameters.velocity || 20;
@@ -223,7 +223,7 @@ export default function OrbitVisualization() {
     // Atmospheric entry analysis
     // Calculate if asteroid survives to ground or explodes in atmosphere
     // Based on Hills & Goda (1993) and Collins et al. fragmentation models
-    
+
     // Strength varies by composition (in Pascals)
     let strength;
     if (density <= 1000) {
@@ -237,29 +237,29 @@ export default function OrbitVisualization() {
     } else {
       strength = 50e6; // 50 MPa for iron asteroids
     }
-    
+
     // Dynamic pressure at breakup: q = 0.5 * rho_air * v^2
     // Air density at ~10km altitude: ~0.4 kg/m³ (typical breakup altitude)
     const airDensity = 0.4;
     const dynamicPressure = 0.5 * airDensity * Math.pow(velocityMS, 2);
-    
+
     // Critical size for atmospheric survival (Collins et al., 2005)
     // Objects larger than ~50m diameter typically survive if stony
     // Objects larger than ~100m almost always survive
     // Smaller objects depend on strength vs dynamic pressure
     const survivalRatio = strength / dynamicPressure;
-    
+
     let impactType = "ground";
     let burstAltitude = 0;
     let craterDiameter = 0;
     let blastRadius = 0;
-    
+
     // Large asteroids (>100m) almost always reach the ground
     if (diameterAvg >= 100) {
       impactType = "ground";
       craterDiameter = 1.8 * Math.pow(megatons, 0.29) * 1000;
       blastRadius = 200 * Math.pow(megatons, 0.33);
-      
+
     // Medium asteroids (50-100m) - depends on composition and speed
     } else if (diameterAvg >= 50) {
       if (survivalRatio > 0.5 || density >= 3500) {
@@ -275,7 +275,7 @@ export default function OrbitVisualization() {
         craterDiameter = 1.8 * Math.pow(effectiveMegatons, 0.29) * 1000 * 0.7;
         blastRadius = 500 * Math.pow(effectiveMegatons, 0.33);
       }
-      
+
     // Small asteroids (<50m) - very likely to airburst
     } else if (diameterAvg >= 10) {
       if (survivalRatio > 2.0 && density >= 7000) {
@@ -292,7 +292,7 @@ export default function OrbitVisualization() {
         blastRadius = 1000 * Math.pow(megatons, 0.33);
         craterDiameter = 0;
       }
-      
+
     // Very small asteroids (<10m) - always airburst or burn up
     } else {
       if (megatons < 0.0001) {
@@ -656,14 +656,14 @@ export default function OrbitVisualization() {
                       <p className="text-sm text-muted-foreground mb-2">Impact Type</p>
                       <div className="flex items-center gap-2">
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
-                          impactData.impactType === 'airburst' 
-                            ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' 
+                          impactData.impactType === 'airburst'
+                            ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30'
                             : impactData.impactType === 'fragmented'
                             ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
                             : 'bg-red-500/20 text-red-500 border border-red-500/30'
                         }`}>
-                          {impactData.impactType === 'airburst' ? '💨 Atmospheric Airburst' : 
-                           impactData.impactType === 'fragmented' ? '💥 Fragmented Impact' : 
+                          {impactData.impactType === 'airburst' ? '💨 Atmospheric Airburst' :
+                           impactData.impactType === 'fragmented' ? '💥 Fragmented Impact' :
                            '🎯 Ground Impact'}
                         </span>
                       </div>
@@ -804,15 +804,15 @@ export default function OrbitVisualization() {
                     <span className="ml-2 font-semibold">1:{Math.round(6371 / (parseFloat(impactData.diameterAvg) / 1000)).toLocaleString()}</span>
                   </div>
                 </div>
-                
+
                 <div className="border-2 rounded-lg overflow-hidden bg-black" style={{ height: '500px' }}>
                   <Canvas camera={{ position: [-1.5, 0.8, 0.5], fov: 60 }}>
                     <Suspense fallback={null}>
-                      <ImpactVisualization 
-                        impactData={impactData} 
+                      <ImpactVisualization
+                        impactData={impactData}
                         isPlaying={impactAnimationPlaying}
                       />
-                      <DreiOrbitControls 
+                      <DreiOrbitControls
                         enableZoom={true}
                         enablePan={true}
                         enableRotate={true}
@@ -823,9 +823,8 @@ export default function OrbitVisualization() {
                     </Suspense>
                   </Canvas>
                 </div>
-                
+
                 <p className="text-xs text-muted-foreground mt-2">
-                  This 3D animation uses <span className="font-semibold">accurate size ratios</span> (asteroid to Earth) and <span className="font-semibold">real impact velocity</span> from the approach data. 
                   The animation is time-compressed 3× and starts from 10,000 km away for optimal visibility. Use your mouse to rotate, zoom, and pan the view.
                   {parseFloat(impactData.diameterAvg) < 100 && " Note: Small asteroids are slightly enhanced for visibility."}
                 </p>
@@ -834,9 +833,9 @@ export default function OrbitVisualization() {
               {/* Disclaimer */}
               <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  <span className="font-semibold">⚠️ Disclaimer:</span> These calculations include atmospheric entry effects and are based on simplified models. 
+                  <span className="font-semibold">⚠️ Disclaimer:</span> These calculations include atmospheric entry effects and are based on simplified models.
                   Small asteroids (typically &lt;50m) often explode in the atmosphere (airburst) rather than creating craters, similar to the 2013 Chelyabinsk meteor.
-                  Actual impact effects would vary significantly depending on material composition, structural strength, entry angle, atmospheric density, and impact location. 
+                  Actual impact effects would vary significantly depending on material composition, structural strength, entry angle, atmospheric density, and impact location.
                   This analysis is for educational purposes only.
                 </p>
               </div>
