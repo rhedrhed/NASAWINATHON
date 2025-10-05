@@ -4,9 +4,8 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-  "dev": "nodemon --require ./preload.js src/index.js"
-}
-,
+    "dev": "nodemon --require ./preload.js src/index.js"
+  },
   "keywords": [],
   "author": "",
   "license": "ISC",
@@ -17,10 +16,8 @@
     "dotenv": "^17.2.3",
     "express": "^5.1.0",
     "node-fetch": "^3.3.2",
+    "nodemon": "^3.1.10",
     "p-retry": "^7.0.0",
     "rate-limiter-flexible": "^8.0.1"
-  },
-  "devDependencies": {
-    "nodemon": "^3.1.10"
   }
 }
