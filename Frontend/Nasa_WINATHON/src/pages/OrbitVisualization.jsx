@@ -136,15 +136,25 @@ export default function OrbitVisualization() {
 
     if (targetApproach) {
       console.log('Looking for approach with date:', targetApproach);
-      approachData = asteroidData.close_approach_data?.find(
-        approach => approach.close_approach_date_full === targetApproach
-      );
+      
+      // Convert ISO date to Date object for comparison
+      const targetDateObj = new Date(targetApproach);
+      
+      // Find closest matching approach by date
+      approachData = asteroidData.close_approach_data?.find(approach => {
+        const approachDateObj = new Date(approach.close_approach_date_full);
+        // Match within same day (ignore exact time)
+        return approachDateObj.toDateString() === targetDateObj.toDateString();
+      });
+      
       if (!approachData) {
-        console.log('No exact match found, trying fuzzy match');
-        // Try to find by date portion only
-        approachData = asteroidData.close_approach_data?.find(
-          approach => approach.close_approach_date_full.startsWith(targetApproach.split(' ')[0])
-        );
+        console.log('No exact date match, trying fuzzy match by year-month-day');
+        // Try partial match
+        const targetDateStr = targetDateObj.toISOString().split('T')[0]; // YYYY-MM-DD
+        approachData = asteroidData.close_approach_data?.find(approach => {
+          const approachDateStr = new Date(approach.close_approach_date_full).toISOString().split('T')[0];
+          return approachDateStr === targetDateStr;
+        });
       }
     }
     
@@ -170,6 +180,8 @@ export default function OrbitVisualization() {
     }
 
     console.log('Using approach data:', approachData.close_approach_date_full);
+    console.log('Velocity for this approach:', approachData.relative_velocity.kilometers_per_second, 'km/s');
+    console.log('Miss distance:', approachData.miss_distance.kilometers, 'km');
 
     // Get asteroid properties
     const diameterMin = asteroidData.estimated_diameter.meters.estimated_diameter_min;
@@ -195,34 +207,102 @@ export default function OrbitVisualization() {
     // Convert to megatons of TNT (1 megaton = 4.184 × 10^15 J)
     const megatons = kineticEnergy / (4.184 * Math.pow(10, 15));
 
-    // Estimate crater diameter (in meters) using Schmidt-Holsapple scaling
-    // D = 1.8 * (E^0.29) where E is in megatons
-    const craterDiameter = 1.8 * Math.pow(megatons, 0.29) * 1000;
+    // Atmospheric entry analysis
+    // Calculate if asteroid survives to ground or explodes in atmosphere
+    // Based on Hills & Goda (1993) and Collins et al. fragmentation models
+    
+    // Strength of rocky asteroid (in Pascals): typical range 1-10 MPa
+    const strength = 5e6; // 5 MPa for typical stony asteroid
+    
+    // Dynamic pressure at breakup: q = 0.5 * rho_air * v^2
+    // Air density at ~10km altitude: ~0.4 kg/m³ (typical breakup altitude)
+    const airDensity = 0.4;
+    const dynamicPressure = 0.5 * airDensity * Math.pow(velocityMS, 2);
+    
+    // Burst altitude estimation (simplified model)
+    // Smaller, weaker objects break up higher in atmosphere
+    const survivalRatio = strength / dynamicPressure;
+    
+    // If strength >> dynamic pressure, object likely survives to ground
+    // If strength << dynamic pressure, object breaks up in atmosphere
+    let impactType = "ground";
+    let burstAltitude = 0;
+    let craterDiameter = 0;
+    let blastRadius = 0;
+    
+    if (survivalRatio < 0.1 || diameterAvg < 50) {
+      // Likely atmospheric airburst
+      impactType = "airburst";
+      
+      // Estimate burst altitude (rough approximation)
+      // Smaller/faster objects burst higher
+      if (diameterAvg < 10) {
+        burstAltitude = 30000 + (velocity * 500); // Very small: 30-50 km
+      } else if (diameterAvg < 25) {
+        burstAltitude = 15000 + (velocity * 300); // Small: 15-30 km  
+      } else {
+        burstAltitude = 5000 + (velocity * 200); // Medium: 5-20 km
+      }
+      
+      // Calculate blast radius for airburst (in meters)
+      // Airbursts can be more destructive over wider area than craters
+      blastRadius = 1000 * Math.pow(megatons, 0.33); // Simplified scaling
+      craterDiameter = 0; // No crater forms
+      
+    } else if (survivalRatio < 1.0) {
+      // Partial fragmentation - weakened but reaches ground
+      impactType = "fragmented";
+      
+      // Energy loss due to atmospheric breakup (~30-70%)
+      const energyLossFactor = 0.5;
+      const effectiveMegatons = megatons * energyLossFactor;
+      
+      // Reduced crater from fragments
+      craterDiameter = 1.8 * Math.pow(effectiveMegatons, 0.29) * 1000 * 0.7;
+      blastRadius = 500 * Math.pow(effectiveMegatons, 0.33);
+      
+    } else {
+      // Survives mostly intact to ground
+      impactType = "ground";
+      
+      // Full crater formation - Schmidt-Holsapple scaling
+      // D = 1.8 * (E^0.29) where E is in megatons
+      craterDiameter = 1.8 * Math.pow(megatons, 0.29) * 1000;
+      blastRadius = 200 * Math.pow(megatons, 0.33);
+    }
 
-    // Categorize impact severity
+    // Categorize impact severity (updated for airburst scenarios)
     let severity = "Minor";
     let description = "Local damage, similar to a small earthquake";
     let color = "text-yellow-500";
 
     if (megatons < 0.001) {
       severity = "Negligible";
-      description = "Likely burns up in atmosphere completely";
+      description = "Burns up completely in atmosphere, possible meteor shower";
       color = "text-green-500";
     } else if (megatons < 1) {
       severity = "Minor";
-      description = "Local damage, airburst effects possible";
+      if (impactType === "airburst") {
+        description = "Atmospheric explosion, shockwave damage, broken windows";
+      } else {
+        description = "Small crater or airburst, local damage possible";
+      }
       color = "text-yellow-500";
     } else if (megatons < 100) {
       severity = "Moderate";
-      description = "Regional destruction, city-level damage";
+      if (impactType === "airburst") {
+        description = "Major airburst event, city-scale devastation from shockwave";
+      } else {
+        description = "Regional destruction, significant crater formation";
+      }
       color = "text-orange-500";
     } else if (megatons < 1000) {
       severity = "Major";
-      description = "Country-scale devastation, climate effects";
+      description = "Country-scale devastation, climate effects, mass casualties";
       color = "text-red-500";
     } else {
       severity = "Catastrophic";
-      description = "Mass extinction event, global climate change";
+      description = "Global mass extinction event, permanent climate change";
       color = "text-red-700";
     }
 
@@ -232,6 +312,9 @@ export default function OrbitVisualization() {
       mass: (mass / 1e9).toFixed(2), // Convert to million kg
       kineticEnergy: megatons.toFixed(6),
       craterDiameter: craterDiameter.toFixed(0),
+      impactType,
+      burstAltitude: burstAltitude > 0 ? (burstAltitude / 1000).toFixed(1) : null,
+      blastRadius: blastRadius.toFixed(0),
       severity,
       description,
       color,
@@ -430,30 +513,80 @@ export default function OrbitVisualization() {
 
               {/* Detailed Effects */}
               <div className="grid md:grid-cols-2 gap-6">
-                {/* Crater Information */}
+                {/* Impact Type & Effects */}
                 <div className="p-5 rounded-lg border-2 bg-card/50">
                   <div className="flex items-center gap-2 mb-4">
                     <Mountain className="h-5 w-5 text-primary" />
-                    <h4 className="text-lg font-semibold">Impact Crater</h4>
+                    <h4 className="text-lg font-semibold">Impact Effects</h4>
                   </div>
                   <div className="space-y-4">
+                    {/* Impact Type Badge */}
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Estimated Diameter</p>
+                      <p className="text-sm text-muted-foreground mb-2">Impact Type</p>
+                      <div className="flex items-center gap-2">
+                        <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
+                          impactData.impactType === 'airburst' 
+                            ? 'bg-orange-500/20 text-orange-500 border border-orange-500/30' 
+                            : impactData.impactType === 'fragmented'
+                            ? 'bg-yellow-500/20 text-yellow-500 border border-yellow-500/30'
+                            : 'bg-red-500/20 text-red-500 border border-red-500/30'
+                        }`}>
+                          {impactData.impactType === 'airburst' ? '💨 Atmospheric Airburst' : 
+                           impactData.impactType === 'fragmented' ? '💥 Fragmented Impact' : 
+                           '🎯 Ground Impact'}
+                        </span>
+                      </div>
+                    </div>
+
+                    {/* Burst Altitude (if airburst) */}
+                    {impactData.burstAltitude && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Burst Altitude</p>
+                        <div className="flex items-end gap-2">
+                          <p className="text-3xl font-bold text-orange-500">{impactData.burstAltitude}</p>
+                          <p className="text-lg text-muted-foreground mb-1">km</p>
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          Explodes in atmosphere before reaching ground
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Crater Diameter (if ground impact) */}
+                    {parseFloat(impactData.craterDiameter) > 0 && (
+                      <div>
+                        <p className="text-sm text-muted-foreground mb-2">Crater Diameter</p>
+                        <div className="flex items-end gap-2">
+                          <p className="text-3xl font-bold">{impactData.craterDiameter}</p>
+                          <p className="text-lg text-muted-foreground mb-1">meters</p>
+                        </div>
+                        <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
+                          <div
+                            className="h-full bg-gradient-to-r from-orange-500 to-red-500"
+                            style={{ width: `${Math.min(100, (parseFloat(impactData.craterDiameter) / 10000) * 100)}%` }}
+                          />
+                        </div>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {parseFloat(impactData.craterDiameter) > 1000
+                            ? `~${(parseFloat(impactData.craterDiameter) / 1000).toFixed(1)} km wide crater`
+                            : 'Relatively small crater'}
+                        </p>
+                      </div>
+                    )}
+
+                    {/* Blast Radius */}
+                    <div>
+                      <p className="text-sm text-muted-foreground mb-2">
+                        {impactData.impactType === 'airburst' ? 'Shockwave Radius' : 'Blast Radius'}
+                      </p>
                       <div className="flex items-end gap-2">
-                        <p className="text-3xl font-bold">{impactData.craterDiameter}</p>
+                        <p className="text-2xl font-bold text-red-500">{impactData.blastRadius}</p>
                         <p className="text-lg text-muted-foreground mb-1">meters</p>
                       </div>
-                      <div className="mt-3 h-2 bg-muted rounded-full overflow-hidden">
-                        <div
-                          className="h-full bg-gradient-to-r from-orange-500 to-red-500"
-                          style={{ width: `${Math.min(100, (parseFloat(impactData.craterDiameter) / 10000) * 100)}%` }}
-                        />
-                      </div>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {parseFloat(impactData.craterDiameter) > 1000
-                          ? `~${(parseFloat(impactData.craterDiameter) / 1000).toFixed(1)} km wide`
-                          : 'Relatively small crater'
-                        }
+                        {parseFloat(impactData.blastRadius) > 1000
+                          ? `~${(parseFloat(impactData.blastRadius) / 1000).toFixed(1)} km blast zone`
+                          : 'Localized destruction zone'}
                       </p>
                     </div>
                   </div>
@@ -570,9 +703,10 @@ export default function OrbitVisualization() {
               {/* Disclaimer */}
               <div className="mt-6 p-4 rounded-lg bg-muted/50 border">
                 <p className="text-xs text-muted-foreground leading-relaxed">
-                  <span className="font-semibold">⚠️ Disclaimer:</span> These calculations are simplified estimates based on asteroid size, velocity, and assumed composition.
-                  Actual impact effects would vary significantly depending on many factors including material composition,
-                  entry angle, atmospheric conditions, and impact location (land vs. ocean). This is for educational purposes only.
+                  <span className="font-semibold">⚠️ Disclaimer:</span> These calculations include atmospheric entry effects and are based on simplified models. 
+                  Small asteroids (typically &lt;50m) often explode in the atmosphere (airburst) rather than creating craters, similar to the 2013 Chelyabinsk meteor.
+                  Actual impact effects would vary significantly depending on material composition, structural strength, entry angle, atmospheric density, and impact location. 
+                  This analysis is for educational purposes only.
                 </p>
               </div>
             </div>
