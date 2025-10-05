@@ -3,9 +3,10 @@ import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Mountain, Gauge, Circle } from "lucide-react";
-import { OrbitScene } from "@/components/orbit";
+import { OrbitScene, ImpactVisualization } from "@/components/orbit";
 import { parseHorizonsData, jdToDate } from "@/lib/horizonsUtils";
 import { OrbitControls } from "../components/orbit/Controls";
+import { OrbitControls as DreiOrbitControls } from "@react-three/drei";
 
 export default function OrbitVisualization() {
   const [searchParams] = useSearchParams();
@@ -19,6 +20,7 @@ export default function OrbitVisualization() {
   const [dataStartTime, setDataStartTime] = useState(null);
   const [dataEndTime, setDataEndTime] = useState(null);
   const lastUpdateRef = useRef(Date.now());
+  const [impactAnimationPlaying, setImpactAnimationPlaying] = useState(false);
 
   // Get target date from URL params
   const targetDateParam = searchParams.get('date');
@@ -493,6 +495,76 @@ export default function OrbitVisualization() {
                     </p>
                   </div>
                 </div>
+              </div>
+
+              {/* 3D Impact Visualization */}
+              <div className="mt-6">
+                <div className="flex items-center justify-between mb-3">
+                  <div>
+                    <h4 className="text-lg font-semibold">3D Impact Simulation</h4>
+                    <p className="text-xs text-muted-foreground">
+                      Accurate scale and velocity based on asteroid data
+                    </p>
+                  </div>
+                  <Button
+                    onClick={() => setImpactAnimationPlaying(!impactAnimationPlaying)}
+                    variant="outline"
+                    size="sm"
+                  >
+                    {impactAnimationPlaying ? (
+                      <>
+                        <Pause className="mr-2 h-4 w-4" />
+                        Pause Animation
+                      </>
+                    ) : (
+                      <>
+                        <Play className="mr-2 h-4 w-4" />
+                        Play Animation
+                      </>
+                    )}
+                  </Button>
+                </div>
+
+                {/* Scale information */}
+                <div className="mb-3 p-3 bg-muted/50 rounded-lg border grid grid-cols-3 gap-4 text-sm">
+                  <div>
+                    <span className="text-muted-foreground">Asteroid Size:</span>
+                    <span className="ml-2 font-semibold">{impactData.diameterAvg}m</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Impact Speed:</span>
+                    <span className="ml-2 font-semibold">{impactData.velocity} km/s</span>
+                  </div>
+                  <div>
+                    <span className="text-muted-foreground">Scale Ratio:</span>
+                    <span className="ml-2 font-semibold">1:{Math.round(6371 / (parseFloat(impactData.diameterAvg) / 1000)).toLocaleString()}</span>
+                  </div>
+                </div>
+                
+                <div className="border-2 rounded-lg overflow-hidden bg-black" style={{ height: '500px' }}>
+                  <Canvas camera={{ position: [-1.5, 0.8, 0.5], fov: 60 }}>
+                    <Suspense fallback={null}>
+                      <ImpactVisualization 
+                        impactData={impactData} 
+                        isPlaying={impactAnimationPlaying}
+                      />
+                      <DreiOrbitControls 
+                        enableZoom={true}
+                        enablePan={true}
+                        enableRotate={true}
+                        minDistance={0.5}
+                        maxDistance={15}
+                        target={[0, 0, 0]}
+                      />
+                    </Suspense>
+                  </Canvas>
+                </div>
+                
+                <p className="text-xs text-muted-foreground mt-2">
+                  This 3D animation uses <span className="font-semibold">accurate size ratios</span> (asteroid to Earth) and <span className="font-semibold">real impact velocity</span> from the approach data. 
+                  The animation is time-compressed 3× and starts from 10,000 km away for optimal visibility. Use your mouse to rotate, zoom, and pan the view.
+                  {parseFloat(impactData.diameterAvg) < 100 && " Note: Small asteroids are slightly enhanced for visibility."}
+                </p>
               </div>
 
               {/* Disclaimer */}
