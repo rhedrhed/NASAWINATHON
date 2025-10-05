@@ -305,7 +305,14 @@ export default function AsteroidDetail() {
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Semi-major Axis</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Semi-major_and_semi-minor_axes"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Semi-major Axis
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -319,7 +326,14 @@ export default function AsteroidDetail() {
               </div>
               <div className="text-center">
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Eccentricity</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Orbital_eccentricity"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Eccentricity
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -333,7 +347,14 @@ export default function AsteroidDetail() {
               </div>
               <div>
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Inclination</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Orbital_inclination"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Inclination
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -347,7 +368,14 @@ export default function AsteroidDetail() {
               </div>
               <div>
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Orbital Period</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Orbital_period"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Orbital Period
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -361,7 +389,14 @@ export default function AsteroidDetail() {
               </div>
               <div>
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Perihelion Distance</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Apsis#Perihelion_and_aphelion"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Perihelion Distance
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
@@ -375,7 +410,14 @@ export default function AsteroidDetail() {
               </div>
               <div>
                 <div className="flex items-center justify-center gap-1">
-                  <p className="text-sm text-muted-foreground">Aphelion Distance</p>
+                  <a
+                    href="https://en.wikipedia.org/wiki/Apsis#Perihelion_and_aphelion"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="text-sm text-muted-foreground hover:text-primary hover:underline"
+                  >
+                    Aphelion Distance
+                  </a>
                   <Tooltip>
                     <TooltipTrigger asChild>
                       <Info className="h-3 w-3 text-muted-foreground cursor-help" />
