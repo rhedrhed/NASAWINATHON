@@ -21,6 +21,14 @@ export default function OrbitVisualization() {
   const [dataEndTime, setDataEndTime] = useState(null);
   const lastUpdateRef = useRef(Date.now());
   const [impactAnimationPlaying, setImpactAnimationPlaying] = useState(false);
+  
+  // User-adjustable impact parameters
+  const [customParameters, setCustomParameters] = useState({
+    useCustom: false,
+    diameter: null, // meters
+    velocity: null, // km/s
+    density: 2600 // kg/m³
+  });
 
   // Get target date from URL params
   const targetDateParam = searchParams.get('date');
@@ -183,16 +191,21 @@ export default function OrbitVisualization() {
     console.log('Velocity for this approach:', approachData.relative_velocity.kilometers_per_second, 'km/s');
     console.log('Miss distance:', approachData.miss_distance.kilometers, 'km');
 
-    // Get asteroid properties
-    const diameterMin = asteroidData.estimated_diameter.meters.estimated_diameter_min;
-    const diameterMax = asteroidData.estimated_diameter.meters.estimated_diameter_max;
-    const diameterAvg = (diameterMin + diameterMax) / 2;
-
-    // Velocity in km/s
-    const velocity = parseFloat(approachData.relative_velocity.kilometers_per_second);
-
-    // Assume density of rocky asteroid (2600 kg/m³)
-    const density = 2600;
+    // Get asteroid properties (use custom if enabled, otherwise from data)
+    let diameterAvg, velocity, density;
+    
+    if (customParameters.useCustom) {
+      diameterAvg = customParameters.diameter || 50;
+      velocity = customParameters.velocity || 20;
+      density = customParameters.density || 2600;
+      console.log('Using custom parameters:', { diameterAvg, velocity, density });
+    } else {
+      const diameterMin = asteroidData.estimated_diameter.meters.estimated_diameter_min;
+      const diameterMax = asteroidData.estimated_diameter.meters.estimated_diameter_max;
+      diameterAvg = (diameterMin + diameterMax) / 2;
+      velocity = parseFloat(approachData.relative_velocity.kilometers_per_second);
+      density = 2600; // Assume density of rocky asteroid (2600 kg/m³)
+    }
 
     // Calculate mass (in kg)
     const radius = diameterAvg / 2;
@@ -211,64 +224,90 @@ export default function OrbitVisualization() {
     // Calculate if asteroid survives to ground or explodes in atmosphere
     // Based on Hills & Goda (1993) and Collins et al. fragmentation models
     
-    // Strength of rocky asteroid (in Pascals): typical range 1-10 MPa
-    const strength = 5e6; // 5 MPa for typical stony asteroid
+    // Strength varies by composition (in Pascals)
+    let strength;
+    if (density <= 1000) {
+      strength = 1e6; // 1 MPa for icy objects
+    } else if (density <= 2000) {
+      strength = 3e6; // 3 MPa for carbonaceous
+    } else if (density <= 2600) {
+      strength = 5e6; // 5 MPa for stony asteroids
+    } else if (density <= 3500) {
+      strength = 10e6; // 10 MPa for stony-iron
+    } else {
+      strength = 50e6; // 50 MPa for iron asteroids
+    }
     
     // Dynamic pressure at breakup: q = 0.5 * rho_air * v^2
     // Air density at ~10km altitude: ~0.4 kg/m³ (typical breakup altitude)
     const airDensity = 0.4;
     const dynamicPressure = 0.5 * airDensity * Math.pow(velocityMS, 2);
     
-    // Burst altitude estimation (simplified model)
-    // Smaller, weaker objects break up higher in atmosphere
+    // Critical size for atmospheric survival (Collins et al., 2005)
+    // Objects larger than ~50m diameter typically survive if stony
+    // Objects larger than ~100m almost always survive
+    // Smaller objects depend on strength vs dynamic pressure
     const survivalRatio = strength / dynamicPressure;
     
-    // If strength >> dynamic pressure, object likely survives to ground
-    // If strength << dynamic pressure, object breaks up in atmosphere
     let impactType = "ground";
     let burstAltitude = 0;
     let craterDiameter = 0;
     let blastRadius = 0;
     
-    if (survivalRatio < 0.1 || diameterAvg < 50) {
-      // Likely atmospheric airburst
-      impactType = "airburst";
-      
-      // Estimate burst altitude (rough approximation)
-      // Smaller/faster objects burst higher
-      if (diameterAvg < 10) {
-        burstAltitude = 30000 + (velocity * 500); // Very small: 30-50 km
-      } else if (diameterAvg < 25) {
-        burstAltitude = 15000 + (velocity * 300); // Small: 15-30 km  
-      } else {
-        burstAltitude = 5000 + (velocity * 200); // Medium: 5-20 km
-      }
-      
-      // Calculate blast radius for airburst (in meters)
-      // Airbursts can be more destructive over wider area than craters
-      blastRadius = 1000 * Math.pow(megatons, 0.33); // Simplified scaling
-      craterDiameter = 0; // No crater forms
-      
-    } else if (survivalRatio < 1.0) {
-      // Partial fragmentation - weakened but reaches ground
-      impactType = "fragmented";
-      
-      // Energy loss due to atmospheric breakup (~30-70%)
-      const energyLossFactor = 0.5;
-      const effectiveMegatons = megatons * energyLossFactor;
-      
-      // Reduced crater from fragments
-      craterDiameter = 1.8 * Math.pow(effectiveMegatons, 0.29) * 1000 * 0.7;
-      blastRadius = 500 * Math.pow(effectiveMegatons, 0.33);
-      
-    } else {
-      // Survives mostly intact to ground
+    // Large asteroids (>100m) almost always reach the ground
+    if (diameterAvg >= 100) {
       impactType = "ground";
-      
-      // Full crater formation - Schmidt-Holsapple scaling
-      // D = 1.8 * (E^0.29) where E is in megatons
       craterDiameter = 1.8 * Math.pow(megatons, 0.29) * 1000;
       blastRadius = 200 * Math.pow(megatons, 0.33);
+      
+    // Medium asteroids (50-100m) - depends on composition and speed
+    } else if (diameterAvg >= 50) {
+      if (survivalRatio > 0.5 || density >= 3500) {
+        // Dense or strong enough to survive
+        impactType = "ground";
+        craterDiameter = 1.8 * Math.pow(megatons, 0.29) * 1000;
+        blastRadius = 200 * Math.pow(megatons, 0.33);
+      } else {
+        // Partial fragmentation
+        impactType = "fragmented";
+        const energyLossFactor = 0.5;
+        const effectiveMegatons = megatons * energyLossFactor;
+        craterDiameter = 1.8 * Math.pow(effectiveMegatons, 0.29) * 1000 * 0.7;
+        blastRadius = 500 * Math.pow(effectiveMegatons, 0.33);
+      }
+      
+    // Small asteroids (<50m) - very likely to airburst
+    } else if (diameterAvg >= 10) {
+      if (survivalRatio > 2.0 && density >= 7000) {
+        // Only very dense iron survives
+        impactType = "fragmented";
+        const energyLossFactor = 0.3;
+        const effectiveMegatons = megatons * energyLossFactor;
+        craterDiameter = 1.8 * Math.pow(effectiveMegatons, 0.29) * 1000 * 0.5;
+        blastRadius = 500 * Math.pow(effectiveMegatons, 0.33);
+      } else {
+        // Atmospheric airburst
+        impactType = "airburst";
+        burstAltitude = 5000 + (velocity * 200); // 5-20 km
+        blastRadius = 1000 * Math.pow(megatons, 0.33);
+        craterDiameter = 0;
+      }
+      
+    // Very small asteroids (<10m) - always airburst or burn up
+    } else {
+      if (megatons < 0.0001) {
+        // Burns up completely
+        impactType = "airburst";
+        burstAltitude = 40000 + (velocity * 500); // 40-70 km
+        blastRadius = 0;
+        craterDiameter = 0;
+      } else {
+        // Small airburst
+        impactType = "airburst";
+        burstAltitude = 20000 + (velocity * 400); // 20-40 km
+        blastRadius = 500 * Math.pow(megatons, 0.33);
+        craterDiameter = 0;
+      }
     }
 
     // Categorize impact severity (updated for airburst scenarios)
@@ -429,6 +468,98 @@ export default function OrbitVisualization() {
                   <span className="font-semibold text-green-500">{impactData.missDistance} km</span>.
                 </p>
               </div>
+            </div>
+
+            {/* Parameter Editor */}
+            <div className="p-6 border-b-2 bg-muted/30">
+              <div className="flex items-center justify-between mb-4">
+                <div>
+                  <h4 className="text-lg font-semibold">Impact Parameters</h4>
+                  <p className="text-xs text-muted-foreground">Adjust parameters to explore different scenarios</p>
+                </div>
+                <Button
+                  onClick={() => {
+                    setCustomParameters(prev => {
+                      const newUseCustom = !prev.useCustom;
+                      if (!newUseCustom) {
+                        return { ...prev, useCustom: false };
+                      }
+                      return {
+                        useCustom: true,
+                        diameter: parseFloat(impactData.diameterAvg),
+                        velocity: parseFloat(impactData.velocity),
+                        density: 2600
+                      };
+                    });
+                  }}
+                  variant={customParameters.useCustom ? "default" : "outline"}
+                  size="sm"
+                >
+                  {customParameters.useCustom ? "Using Custom" : "Customize"}
+                </Button>
+              </div>
+
+              {customParameters.useCustom && (
+                <div className="grid md:grid-cols-3 gap-4">
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Diameter (m)</label>
+                    <input
+                      type="number"
+                      min="1"
+                      max="10000"
+                      step="1"
+                      value={customParameters.diameter || ''}
+                      onChange={(e) => setCustomParameters(prev => ({
+                        ...prev,
+                        diameter: parseFloat(e.target.value) || 0
+                      }))}
+                      className="w-full px-3 py-2 rounded-md border bg-background text-foreground"
+                    />
+                    <p className="text-xs text-muted-foreground">1-10,000 m</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Velocity (km/s)</label>
+                    <input
+                      type="number"
+                      min="5"
+                      max="75"
+                      step="0.1"
+                      value={customParameters.velocity || ''}
+                      onChange={(e) => setCustomParameters(prev => ({
+                        ...prev,
+                        velocity: parseFloat(e.target.value) || 0
+                      }))}
+                      className="w-full px-3 py-2 rounded-md border bg-background text-foreground"
+                    />
+                    <p className="text-xs text-muted-foreground">5-75 km/s</p>
+                  </div>
+
+                  <div className="space-y-2">
+                    <label className="text-sm font-medium">Composition</label>
+                    <select
+                      value={customParameters.density}
+                      onChange={(e) => setCustomParameters(prev => ({
+                        ...prev,
+                        density: parseInt(e.target.value)
+                      }))}
+                      className="w-full px-3 py-2 rounded-md border bg-background text-foreground"
+                    >
+                      <option value="1000">Ice (1000 kg/m³)</option>
+                      <option value="2000">Carbonaceous (2000 kg/m³)</option>
+                      <option value="2600">Stony (2600 kg/m³)</option>
+                      <option value="3500">Stony-Iron (3500 kg/m³)</option>
+                      <option value="8000">Iron (8000 kg/m³)</option>
+                    </select>
+                  </div>
+                </div>
+              )}
+
+              {!customParameters.useCustom && (
+                <div className="text-center py-4 text-sm text-muted-foreground">
+                  Click "Customize" to modify parameters and explore different impact scenarios
+                </div>
+              )}
             </div>
 
             {/* Main Content */}
