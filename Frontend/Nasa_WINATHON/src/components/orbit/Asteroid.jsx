@@ -19,7 +19,7 @@ export function Asteroid({ asteroidOrbitData, isPlaying, currentDate }) {
       const x = pos.x * AU_TO_UNITS;
       const y = pos.z * AU_TO_UNITS;
       const z = pos.y * AU_TO_UNITS;
-      
+
       meshRef.current.position.set(x, y, z);
 
       // Update trail only when playing
@@ -75,8 +75,14 @@ export function Asteroid({ asteroidOrbitData, isPlaying, currentDate }) {
 
       {/* Asteroid */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.08, 16, 16]} />
-        <meshStandardMaterial color="#999999" roughness={0.8} metalness={0.2} />
+        <sphereGeometry args={[0.04, 8, 8]} />
+        <meshStandardMaterial
+          color="#999999"
+          emissive="#999999"
+          emissiveIntensity={0.6}
+          roughness={0.8}
+          metalness={0.2}
+        />
       </mesh>
     </>
   );

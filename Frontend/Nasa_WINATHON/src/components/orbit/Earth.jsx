@@ -18,7 +18,7 @@ export function Earth({ earthOrbitData, isPlaying, currentDate }) {
       const x = pos.x * AU_TO_UNITS;
       const y = pos.z * AU_TO_UNITS;
       const z = pos.y * AU_TO_UNITS;
-      
+
       meshRef.current.position.set(x, y, z);
       if (isPlaying) {
         meshRef.current.rotation.y += 0.01;
@@ -53,8 +53,14 @@ export function Earth({ earthOrbitData, isPlaying, currentDate }) {
 
       {/* Earth */}
       <mesh ref={meshRef}>
-        <sphereGeometry args={[0.15, 32, 32]} />
-        <meshStandardMaterial color="#4DA6FF" metalness={0.4} roughness={0.7} />
+        <sphereGeometry args={[0.08, 16, 16]} />
+        <meshStandardMaterial
+          color="#4DA6FF"
+          emissive="#4DA6FF"
+          emissiveIntensity={0.8}
+          metalness={0.4}
+          roughness={0.7}
+        />
       </mesh>
     </>
   );

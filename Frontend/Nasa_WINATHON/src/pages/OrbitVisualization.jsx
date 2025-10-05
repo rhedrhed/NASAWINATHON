@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { ArrowLeft, Play, Pause, RotateCcw } from "lucide-react";
 import { OrbitScene } from "@/components/orbit";
 import { parseHorizonsData, jdToDate } from "@/lib/horizonsUtils";
+import { OrbitControls } from "../components/orbit/Controls";
 
 export default function OrbitVisualization() {
   const [searchParams] = useSearchParams();
@@ -177,10 +178,7 @@ export default function OrbitVisualization() {
           </Canvas>
         </div>
 
-        <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-          <p><strong>Controls:</strong> Left-click and drag to rotate | Right-click to pan | Scroll to zoom</p>
-          <p className="mt-1">🟡 Yellow = Sun | 🔵 Blue = Earth | ⚪ Gray = Asteroid</p>
-        </div>
+        <OrbitControls asteroidName={null} />
       </div>
     </div>
   );

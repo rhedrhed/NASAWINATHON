@@ -7,6 +7,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 import { Play, Pause, RotateCcw, Info, ArrowLeft } from "lucide-react";
 import { OrbitScene } from "@/components/orbit";
 import { parseHorizonsData, jdToDate } from "@/lib/horizonsUtils";
+import { OrbitControls } from "../components/orbit/Controls";
 
 const SECS_PER_HOUR = 3600;
 const SECS_PER_DAY = SECS_PER_HOUR * 24;
@@ -23,13 +24,13 @@ export default function AsteroidDetail() {
   const [earthOrbitData, setEarthOrbitData] = useState([]);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentDate, setCurrentDate] = useState(new Date());
-  
+
   // Initialize speed from localStorage or default to 1 week per second
   const [speed, setSpeed] = useState(() => {
     const savedSpeed = localStorage.getItem(SPEED_STORAGE_KEY);
     return savedSpeed ? parseFloat(savedSpeed) : SECS_PER_WEEK;
   });
-  
+
   const [dataStartTime, setDataStartTime] = useState(null);
   const [dataEndTime, setDataEndTime] = useState(null);
   const startTimeRef = useRef(new Date());
@@ -227,10 +228,7 @@ export default function AsteroidDetail() {
         </Canvas>
       </div>
 
-      <div className="mt-4 p-3 bg-muted rounded-lg text-sm">
-        <p><strong>Controls:</strong> Left-click and drag to rotate | Right-click to pan | Scroll to zoom</p>
-        <p className="mt-1">🟡 Yellow = Sun | 🔵 Blue = Earth | ⚪ Gray = Asteroid {asteroidData?.name}</p>
-      </div>
+      <OrbitControls asteroidName={asteroidData?.name} />
 
       {asteroidData && (
         <div className="mt-6 p-4 border rounded-lg">
