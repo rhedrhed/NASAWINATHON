@@ -10,11 +10,116 @@ export default function Simulation() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    // Load asteroid list (for now, just one asteroid)
+    // Load asteroid list
     fetch('/asteroid.json')
       .then(res => res.json())
       .then(data => {
-        setAsteroids([data]); // Wrap in array for future expansion
+        // Add the loaded asteroid along with placeholder asteroids
+        const placeholderAsteroids = [
+          data, // The real asteroid from the JSON file
+          // Placeholder asteroids for demonstration
+          {
+            id: '2099942',
+            name: 'Apophis (99942)',
+            is_potentially_hazardous_asteroid: true,
+            estimated_diameter: {
+              meters: {
+                estimated_diameter_min: 310,
+                estimated_diameter_max: 340
+              }
+            },
+            orbital_data: {
+              orbit_class: { orbit_class_type: 'Aten' },
+              semi_major_axis: '0.922',
+              eccentricity: '0.191',
+              inclination: '3.331'
+            },
+            close_approach_data: [
+              {
+                close_approach_date_full: '2029-Apr-13 21:46',
+                miss_distance: { kilometers: '31600' }
+              }
+            ]
+          },
+          {
+            id: '162173',
+            name: 'Ryugu (162173)',
+            is_potentially_hazardous_asteroid: false,
+            estimated_diameter: {
+              meters: {
+                estimated_diameter_min: 850,
+                estimated_diameter_max: 920
+              }
+            },
+            orbital_data: {
+              orbit_class: { orbit_class_type: 'Apollo' },
+              semi_major_axis: '1.190',
+              eccentricity: '0.190',
+              inclination: '5.884'
+            },
+            close_approach_data: []
+          },
+          {
+            id: '101955',
+            name: 'Bennu (101955)',
+            is_potentially_hazardous_asteroid: true,
+            estimated_diameter: {
+              meters: {
+                estimated_diameter_min: 490,
+                estimated_diameter_max: 492
+              }
+            },
+            orbital_data: {
+              orbit_class: { orbit_class_type: 'Apollo' },
+              semi_major_axis: '1.126',
+              eccentricity: '0.204',
+              inclination: '6.035'
+            },
+            close_approach_data: [
+              {
+                close_approach_date_full: '2135-Sep-25 12:00',
+                miss_distance: { kilometers: '300000' }
+              }
+            ]
+          },
+          {
+            id: '433',
+            name: 'Eros (433)',
+            is_potentially_hazardous_asteroid: false,
+            estimated_diameter: {
+              meters: {
+                estimated_diameter_min: 16840,
+                estimated_diameter_max: 16840
+              }
+            },
+            orbital_data: {
+              orbit_class: { orbit_class_type: 'Amor' },
+              semi_major_axis: '1.458',
+              eccentricity: '0.223',
+              inclination: '10.829'
+            },
+            close_approach_data: []
+          },
+          {
+            id: '25143',
+            name: 'Itokawa (25143)',
+            is_potentially_hazardous_asteroid: false,
+            estimated_diameter: {
+              meters: {
+                estimated_diameter_min: 330,
+                estimated_diameter_max: 350
+              }
+            },
+            orbital_data: {
+              orbit_class: { orbit_class_type: 'Apollo' },
+              semi_major_axis: '1.324',
+              eccentricity: '0.280',
+              inclination: '1.622'
+            },
+            close_approach_data: []
+          }
+        ];
+        setAsteroids(placeholderAsteroids);
         setLoading(false);
       })
       .catch(err => {

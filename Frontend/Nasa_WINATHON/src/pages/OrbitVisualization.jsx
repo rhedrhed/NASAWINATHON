@@ -2,7 +2,8 @@ import { useEffect, useState, useRef, Suspense } from "react";
 import { useSearchParams, useNavigate, useParams } from "react-router-dom";
 import { Canvas } from "@react-three/fiber";
 import { Button } from "@/components/ui/button";
-import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Mountain, Gauge, Circle } from "lucide-react";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { ArrowLeft, Play, Pause, RotateCcw, AlertTriangle, Zap, Mountain, Gauge, Circle, Info } from "lucide-react";
 import { OrbitScene } from "@/components/orbit";
 import { parseHorizonsData, jdToDate } from "@/lib/horizonsUtils";
 import { OrbitControls } from "../components/orbit/Controls";
@@ -651,7 +652,32 @@ export default function OrbitVisualization() {
                   <div className="space-y-4">
                     {/* Impact Type Badge */}
                     <div>
-                      <p className="text-sm text-muted-foreground mb-2">Impact Type</p>
+                      <div className="flex items-center justify-center gap-1 mb-2">
+                        <p className="text-sm text-muted-foreground">Impact Type</p>
+                        <TooltipProvider>
+                          <Tooltip>
+                            <TooltipTrigger asChild>
+                              <Info className="h-3 w-3 text-muted-foreground cursor-help" />
+                            </TooltipTrigger>
+                            <TooltipContent className="max-w-xs">
+                              <div className="space-y-2">
+                                <div>
+                                  <p className="font-semibold">💨 Atmospheric Airburst</p>
+                                  <p className="text-xs">The asteroid explodes in the atmosphere before reaching the ground, creating a powerful shockwave but no crater.</p>
+                                </div>
+                                <div>
+                                  <p className="font-semibold">💥 Fragmented Impact</p>
+                                  <p className="text-xs">The asteroid breaks apart during atmospheric entry, with fragments causing multiple smaller impacts.</p>
+                                </div>
+                                <div>
+                                  <p className="font-semibold">🎯 Ground Impact</p>
+                                  <p className="text-xs">The asteroid remains intact and strikes the ground, creating a crater and devastating blast zone.</p>
+                                </div>
+                              </div>
+                            </TooltipContent>
+                          </Tooltip>
+                        </TooltipProvider>
+                      </div>
                       <div className="flex items-center gap-2">
                         <span className={`px-3 py-1 rounded-full text-sm font-semibold ${
                           impactData.impactType === 'airburst'
@@ -728,29 +754,49 @@ export default function OrbitVisualization() {
                     <h4 className="text-lg font-semibold">Energy Comparison</h4>
                   </div>
                   <div className="space-y-3">
-                    <div>
-                      <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-sm text-muted-foreground">This Impact</span>
-                        <span className="font-bold text-orange-500">{impactData.kineticEnergy} MT</span>
-                      </div>
-                      <div className="h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded" />
-                    </div>
+                    {(() => {
+                      const impactEnergy = parseFloat(impactData.kineticEnergy);
+                      const tunguskaEnergy = 4; // MT
+                      const hiroshimaEnergy = 0.015; // MT
 
-                    <div>
-                      <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-sm text-muted-foreground">Tunguska Event (1908)</span>
-                        <span className="font-semibold">3-5 MT</span>
-                      </div>
-                      <div className="h-4 bg-yellow-500/50 rounded" style={{ width: '20%' }} />
-                    </div>
+                      // Find the maximum energy for scaling
+                      const maxEnergy = Math.max(impactEnergy, tunguskaEnergy, hiroshimaEnergy);
 
-                    <div>
-                      <div className="flex justify-between items-baseline mb-1">
-                        <span className="text-sm text-muted-foreground">Hiroshima Bomb</span>
-                        <span className="font-semibold">0.015 MT</span>
-                      </div>
-                      <div className="h-4 bg-green-500/50 rounded" style={{ width: '5%' }} />
-                    </div>
+                      // Calculate percentages with a minimum visible width
+                      const getWidth = (energy) => {
+                        const percentage = (energy / maxEnergy) * 100;
+                        // Ensure minimum 2% width for visibility on log scale, or use log scale
+                        return Math.max(2, percentage);
+                      };
+
+                      return (
+                        <>
+                          <div>
+                            <div className="flex justify-between items-baseline mb-1">
+                              <span className="text-sm text-muted-foreground">This Impact</span>
+                              <span className="font-bold text-orange-500">{impactData.kineticEnergy} MT</span>
+                            </div>
+                            <div className="h-8 bg-gradient-to-r from-orange-500 to-red-500 rounded" style={{ width: `${getWidth(impactEnergy)}%` }} />
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-baseline mb-1">
+                              <span className="text-sm text-muted-foreground">Tunguska Event (1908)</span>
+                              <span className="font-semibold">3-5 MT</span>
+                            </div>
+                            <div className="h-4 bg-yellow-500/50 rounded" style={{ width: `${getWidth(tunguskaEnergy)}%` }} />
+                          </div>
+
+                          <div>
+                            <div className="flex justify-between items-baseline mb-1">
+                              <span className="text-sm text-muted-foreground">Hiroshima Bomb</span>
+                              <span className="font-semibold">0.015 MT</span>
+                            </div>
+                            <div className="h-4 bg-green-500/50 rounded" style={{ width: `${getWidth(hiroshimaEnergy)}%` }} />
+                          </div>
+                        </>
+                      );
+                    })()}
 
                     <p className="text-xs text-muted-foreground mt-3 pt-3 border-t">
                       Energy bars scaled for comparison. Actual energy: {impactData.kineticEnergy} megatons of TNT equivalent.
